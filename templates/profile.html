@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesInsight - My Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-brand">
+            <h2>Sales<span>Insight</span></h2>
+        </div>
+        <div class="nav-menu">
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+            <a href="/analytics" class="nav-link"> Analytics</a>
+            <a href="/sales" class="nav-link"> Sales</a>
+        </div>
+        <div class="user-menu">
+            <div class="user-info" onclick="toggleDropdown()">
+                <span id="userName"> User</span>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="/profile" class="dropdown-item">
+                    <span class="dropdown-icon"></span>
+                    My Profile
+                </a>
+                <a href="/settings" class="dropdown-item">
+                    <span class="dropdown-icon"></span>
+                    Settings
+                </a>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="toggleTheme()">
+                    <span class="dropdown-icon"></span>
+                    Dark/Light Mode
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" onclick="logout()">
+                    <span class="dropdown-icon"></span>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1> My Profile</h1>
+            <p>Manage your account information</p>
+        </div>
+
+        <div class="two-columns">
+            <!-- Profile Info Card -->
+            <div class="form-card">
+                <h3 class="form-title"> Profile Information</h3>
+                <div id="profileInfo">
+                    <div class="profile-field">
+                        <label>Username:</label>
+                        <span id="profileUsername">-</span>
+                    </div>
+                    <div class="profile-field">
+                        <label>Email:</label>
+                        <span id="profileEmail">-</span>
+                    </div>
+                    <div class="profile-field">
+                        <label>Full Name:</label>
+                        <span id="profileName">-</span>
+                    </div>
+                    <div class="profile-field">
+                        <label>Member Since:</label>
+                        <span id="profileSince">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Stats Card -->
+            <div class="form-card">
+                <h3 class="form-title"> Account Statistics</h3>
+                <div class="stats-mini">
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">Total Sales Added</span>
+                        <span class="stat-mini-value" id="userSalesCount">0</span>
+                    </div>
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">Account Status</span>
+                        <span class="stat-mini-value" style="color: #28a745;"> Active</span>
+                    </div>
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">Last Login</span>
+                        <span class="stat-mini-value" id="lastLogin">Today</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Profile Form -->
+        <div class="form-card">
+            <h3 class="form-title"> Update Profile</h3>
+            <form id="updateProfileForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="updateFirstName" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="updateLastName" placeholder="Last Name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="updateEmail" placeholder="Email">
+                </div>
+                <button type="submit" class="btn btn-primary"> Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Change Password Form -->
+        <div class="form-card">
+            <h3 class="form-title"> Change Password</h3>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary"> Change Password</button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .profile-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .profile-field label {
+            font-weight: 600;
+            color: #666;
+        }
+        .profile-field span {
+            color: #333;
+        }
+    </style>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '/';
+        }
+
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        const token = sessionStorage.getItem('token') || '';
+
+        document.getElementById('userName').innerHTML = `👤 ${user.username || 'User'}`;
+        
+        // Load profile data
+        document.getElementById('profileUsername').textContent = user.username || '-';
+        document.getElementById('profileEmail').textContent = user.email || '-';
+        document.getElementById('profileName').textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Not set';
+        document.getElementById('profileSince').textContent = new Date(user.created_at).toLocaleDateString() || '-';
+
+        // Update profile form
+        document.getElementById('updateProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const updateData = {
+                first_name: document.getElementById('updateFirstName').value,
+                last_name: document.getElementById('updateLastName').value,
+                email: document.getElementById('updateEmail').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/users/update`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                if (response.ok) {
+                    alert('Profile updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Failed to update profile');
+                }
+            } catch (error) {
+                alert('Error updating profile');
+            }
+        });
+
+        // Change password form
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            const passwordData = {
+                current_password: document.getElementById('currentPassword').value,
+                new_password: newPassword
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/users/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(passwordData)
+                });
+                
+                if (response.ok) {
+                    alert('Password changed successfully! Please login again.');
+                    logout();
+                } else {
+                    alert('Failed to change password');
+                }
+            } catch (error) {
+                alert('Error changing password');
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = '/';
+        }
+
+        // ==================== DROPDOWN MENU ====================
+function toggleDropdown() {
+    const userMenu = document.querySelector('.user-menu');
+    userMenu.classList.toggle('active');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const userMenu = document.querySelector('.user-menu');
+    const userInfo = document.querySelector('.user-info');
+    
+    if (userMenu && userInfo && !userMenu.contains(event.target)) {
+        userMenu.classList.remove('active');
+    }
+});
+
+// ==================== DARK/LIGHT MODE ====================
+function toggleTheme() {
+    const body = document.body;
+    const isDarkMode = body.classList.contains('dark-mode');
+    
+    if (isDarkMode) {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// Load saved theme
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+}
+    </script>
+</body>
+</html>

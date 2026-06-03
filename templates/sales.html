@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesInsight - Sales Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-brand">
+            <h2> Sales<span>Insight</span></h2>
+        </div>
+        <div class="nav-menu">
+            <a href="/dashboard" class="nav-link"> Dashboard</a>
+            <a href="/analytics" class="nav-link"> Analytics</a>
+            <a href="/sales" class="nav-link"> Sales</a>
+        </div>
+        <div class="user-menu">
+            <div class="user-info" onclick="toggleDropdown()">
+                <span id="userName"> User</span>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="/profile" class="dropdown-item">
+                    <span class="dropdown-icon"></span>
+                    My Profile
+                </a>
+                <a href="/settings" class="dropdown-item">
+                    <span class="dropdown-icon"></span>
+                    Settings
+                </a>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="toggleTheme()">
+                    <span class="dropdown-icon"></span>
+                    Dark/Light Mode
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" onclick="logout()">
+                    <span class="dropdown-icon"></span>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1> Sales Management</h1>
+            <p>Add, view, and manage your sales records</p>
+        </div>
+
+        <div class="two-columns">
+            <!-- Add Sale Form -->
+            <div class="form-card">
+                <h3 class="form-title"> Add New Sale</h3>
+                <form id="saleForm">
+                    <div class="form-group">
+                        <label>Product Name *</label>
+                        <input type="text" id="productName" required placeholder="e.g., iPhone 15">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="category">
+                            <option value="Electronics"> Electronics</option>
+                            <option value="Clothing"> Clothing</option>
+                            <option value="Furniture"> Furniture</option>
+                            <option value="Groceries"> Groceries</option>
+                            <option value="Books"> Books</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Quantity *</label>
+                            <input type="number" id="quantity" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (₹) *</label>
+                            <input type="number" id="price" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Region *</label>
+                        <select id="region" required>
+                            <option value="North"> North</option>
+                            <option value="South"> South</option>
+                            <option value="East"> East</option>
+                            <option value="West"> West</option>
+                            <option value="Central"> Central</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"> Add Sale</button>
+                </form>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="form-card">
+                <h3 class="form-title"> Quick Stats</h3>
+                <div class="stats-mini">
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">Total Sales</span>
+                        <span class="stat-mini-value" id="totalSalesCount">0</span>
+                    </div>
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">Total Revenue</span>
+                        <span class="stat-mini-value" id="totalRevenueSum">₹0</span>
+                    </div>
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">Total Products</span>
+                        <span class="stat-mini-value" id="totalProductsCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Sales Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3> All Sales Records</h3>
+                <button class="btn btn-small" onclick="refreshSales()"> Refresh</button>
+            </div>
+            <div id="salesTable"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '/';
+        }
+
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        document.getElementById('userName').innerHTML = `👤 ${user.username || 'User'}`;
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = '/';
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + amount.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        }
+
+        async function loadSales() {
+            try {
+                const response = await fetch(`${API_URL}/api/sales`);
+                const data = await response.json();
+                
+                if (data.sales && data.sales.length > 0) {
+                    let html = '<table><thead><tr>';
+                    html += '<th>ID</th><th>Product</th><th>Category</th><th>Qty</th><th>Price</th><th>Revenue</th><th>Region</th><th>Date</th><th>Action</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    data.sales.reverse().forEach(sale => {
+                        html += `<tr>
+                            <td>${sale.id}</td>
+                            <td><strong>${sale.product_name}</strong></td>
+                            <td>${sale.category}</td>
+                            <td>${sale.quantity}</td>
+                            <td>${formatCurrency(sale.price)}</td>
+                            <td>${formatCurrency(sale.revenue)}</td>
+                            <td>${sale.region}</td>
+                            <td>${sale.date}</td>
+                            <td><button class="btn-delete" onclick="deleteSale(${sale.id})">Delete</button></td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    document.getElementById('salesTable').innerHTML = html;
+                    
+                    // Update stats
+                    const totalRevenue = data.sales.reduce((sum, s) => sum + s.revenue, 0);
+                    const totalProducts = data.sales.reduce((sum, s) => sum + s.quantity, 0);
+                    document.getElementById('totalSalesCount').textContent = data.sales.length;
+                    document.getElementById('totalRevenueSum').textContent = formatCurrency(totalRevenue);
+                    document.getElementById('totalProductsCount').textContent = totalProducts;
+                } else {
+                    document.getElementById('salesTable').innerHTML = '<p style="text-align: center; padding: 40px;">No sales yet. Add your first sale above!</p>';
+                }
+            } catch (error) {
+                console.error('Error loading sales:', error);
+            }
+        }
+
+        async function deleteSale(saleId) {
+            if (confirm('Are you sure you want to delete this sale?')) {
+                const response = await fetch(`${API_URL}/api/sales/${saleId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadSales();
+                    alert('Sale deleted successfully!');
+                }
+            }
+        }
+
+        async function refreshSales() {
+            await loadSales();
+            alert('Sales data refreshed!');
+        }
+
+        document.getElementById('saleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const saleData = {
+                product_name: document.getElementById('productName').value,
+                category: document.getElementById('category').value,
+                quantity: parseFloat(document.getElementById('quantity').value),
+                price: parseFloat(document.getElementById('price').value),
+                region: document.getElementById('region').value,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            const response = await fetch(`${API_URL}/api/sales`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(saleData)
+            });
+            
+            if (response.ok) {
+                alert('Sale added successfully!');
+                document.getElementById('saleForm').reset();
+                loadSales();
+            } else {
+                alert('Failed to add sale');
+            }
+        });
+
+        loadSales();
+
+        // ==================== DROPDOWN MENU ====================
+function toggleDropdown() {
+    const userMenu = document.querySelector('.user-menu');
+    userMenu.classList.toggle('active');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const userMenu = document.querySelector('.user-menu');
+    const userInfo = document.querySelector('.user-info');
+    
+    if (userMenu && userInfo && !userMenu.contains(event.target)) {
+        userMenu.classList.remove('active');
+    }
+});
+
+// ==================== DARK/LIGHT MODE ====================
+function toggleTheme() {
+    const body = document.body;
+    const isDarkMode = body.classList.contains('dark-mode');
+    
+    if (isDarkMode) {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// Load saved theme
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+}
+    </script>
+</body>
+</html>

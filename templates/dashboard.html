@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesInsight - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-brand">
+            <h2> Sales<span>Insight</span></h2>
+        </div>
+        <div class="nav-menu">
+            <a href="/dashboard" class="nav-link"> Dashboard</a>
+            <a href="/analytics" class="nav-link"> Analytics</a>
+            <a href="/sales" class="nav-link"> Sales</a>
+        </div>
+        <div class="user-menu">
+            <div class="user-info" onclick="toggleDropdown()">
+                <span id="userName"> User</span>
+                <span class="dropdown-arrow">▼</span>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="/profile" class="dropdown-item">
+                    <span class="dropdown-icon"></span>
+                    My Profile
+                </a>
+                <a href="/settings" class="dropdown-item">
+                    <span class="dropdown-icon"></span>
+                    Settings
+                </a>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" onclick="toggleTheme()">
+                    <span class="dropdown-icon"></span>
+                    Dark/Light Mode
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" onclick="logout()">
+                    <span class="dropdown-icon"></span>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <div class="container">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h1>Welcome back, <span id="welcomeName">User</span>! </h1>
+            <p>Here's what's happening with your sales today.</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-info">
+                    <h3>Total Revenue</h3>
+                    <div class="stat-value" id="totalRevenue">₹0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-info">
+                    <h3>Total Orders</h3>
+                    <div class="stat-value" id="totalOrders">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-info">
+                    <h3>Avg Order Value</h3>
+                    <div class="stat-value" id="avgOrderValue">₹0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-info">
+                    <h3>Total Customers</h3>
+                    <div class="stat-value" id="totalCustomers">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="section-header">
+                <h2>Quick Actions</h2>
+            </div>
+            <div class="action-grid">
+                <div class="action-card" onclick="window.location.href='/sales'">
+                    <div class="action-icon"></div>
+                    <h3>Add Sale</h3>
+                    <p>Record a new transaction</p>
+                </div>
+                <div class="action-card" onclick="window.location.href='/analytics'">
+                    <div class="action-icon"></div>
+                    <h3>View Analytics</h3>
+                    <p>See charts and trends</p>
+                </div>
+                <div class="action-card" onclick="exportData()">
+                    <div class="action-icon"></div>
+                    <h3>Export Data</h3>
+                    <p>Download sales report</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Sales Preview -->
+        <div class="recent-sales">
+            <div class="section-header">
+                <h2>Recent Sales</h2>
+                <a href="/sales" class="view-all">View All →</a>
+            </div>
+            <div class="table-container">
+                <div id="recentSalesTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        // Check authentication
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '/';
+        }
+
+        // Load user info
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        document.getElementById('welcomeName').textContent = user.first_name || user.username || 'User';
+        document.getElementById('userName').innerHTML = `👤 ${user.username || 'User'}`;
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = '/';
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + amount.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        }
+
+        async function loadDashboard() {
+            try {
+                // Load stats
+                const statsRes = await fetch(`${API_URL}/api/sales/summary`);
+                const stats = await statsRes.json();
+                
+                document.getElementById('totalRevenue').textContent = formatCurrency(stats.total_revenue);
+                document.getElementById('totalOrders').textContent = stats.total_orders;
+                document.getElementById('avgOrderValue').textContent = formatCurrency(stats.average_order_value);
+                
+                // Load users count
+                const usersRes = await fetch(`${API_URL}/api/users`);
+                const users = await usersRes.json();
+                document.getElementById('totalCustomers').textContent = users.count;
+                
+                // Load recent sales
+                const salesRes = await fetch(`${API_URL}/api/sales`);
+                const sales = await salesRes.json();
+                
+                if (sales.sales && sales.sales.length > 0) {
+                    let html = '</table><thead><tr><th>Product</th><th>Qty</th><th>Revenue</th><th>Region</th><th>Date</th></tr></thead><tbody>';
+                    
+                    sales.sales.slice(-5).reverse().forEach(sale => {
+                        html += `<tr>
+                            <td>${sale.product_name}</td>
+                            <td>${sale.quantity}</td>
+                            <td>${formatCurrency(sale.revenue)}</td>
+                            <td>${sale.region}</td>
+                            <td>${sale.date}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    document.getElementById('recentSalesTable').innerHTML = html;
+                } else {
+                    document.getElementById('recentSalesTable').innerHTML = '<p style="text-align: center; padding: 40px;">No sales yet. <a href="/sales">Add your first sale →</a></p>';
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function exportData() {
+            try {
+                const response = await fetch(`${API_URL}/api/sales`);
+                const data = await response.json();
+                
+                if (data.sales && data.sales.length > 0) {
+                    let csv = "ID,Product,Category,Quantity,Price,Revenue,Region,Date\n";
+                    data.sales.forEach(sale => {
+                        csv += `${sale.id},${sale.product_name},${sale.category},${sale.quantity},${sale.price},${sale.revenue},${sale.region},${sale.date}\n`;
+                    });
+                    
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `sales_report_${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    alert('✅ Report exported successfully!');
+                }
+            } catch (error) {
+                alert('Error exporting data');
+            }
+        }
+
+        loadDashboard();
+
+        // ==================== DROPDOWN MENU ====================
+function toggleDropdown() {
+    const userMenu = document.querySelector('.user-menu');
+    userMenu.classList.toggle('active');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const userMenu = document.querySelector('.user-menu');
+    const userInfo = document.querySelector('.user-info');
+    
+    if (userMenu && userInfo && !userMenu.contains(event.target)) {
+        userMenu.classList.remove('active');
+    }
+});
+
+// ==================== DARK/LIGHT MODE ====================
+function toggleTheme() {
+    const body = document.body;
+    const isDarkMode = body.classList.contains('dark-mode');
+    
+    if (isDarkMode) {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// Load saved theme
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+}
+    </script>
+</body>
+</html>

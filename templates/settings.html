@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesInsight - Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2> Sales<span>Insight</span></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="/dashboard" class="nav-link"> Dashboard</a>
+                <a href="/analytics" class="nav-link"> Analytics</a>
+                <a href="/sales" class="nav-link"> Sales</a>
+            </div>
+            <div class="user-menu">
+                <div class="user-info" onclick="toggleDropdown()">
+                    <span id="userName"> User</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="/profile" class="dropdown-item"> My Profile</a>
+                    <a href="/settings" class="dropdown-item"> Settings</a>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" onclick="toggleTheme()"> Dark/Light Mode</div>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item" onclick="logout()"> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1> Settings</h1>
+            <p>Customize your application preferences</p>
+        </div>
+
+        <div class="two-columns">
+            <!-- Appearance Settings -->
+            <div class="form-card">
+                <h3 class="form-title"> Appearance</h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon"></span>
+                        <div>
+                            <strong>Dark Mode</strong>
+                            <p>Switch between light and dark theme</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleTheme()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon"></span>
+                        <div>
+                            <strong>Compact View</strong>
+                            <p>Reduce spacing for more data visibility</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="compactView" onchange="toggleCompactView()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="form-card">
+                <h3 class="form-title"> Notifications</h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon"></span>
+                        <div>
+                            <strong>Email Reports</strong>
+                            <p>Receive weekly sales reports via email</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="emailReports">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-icon"></span>
+                        <div>
+                            <strong>Low Stock Alerts</strong>
+                            <p>Get notified when products are low in stock</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="stockAlerts">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Data Preferences -->
+            <div class="form-card">
+                <h3 class="form-title"> Data Preferences</h3>
+                <div class="form-group">
+                    <label>Default Date Range</label>
+                    <select id="defaultDateRange">
+                        <option value="7">Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Default Chart Type</label>
+                    <select id="defaultChartType">
+                        <option value="line">Line Chart (Trend)</option>
+                        <option value="bar">Bar Chart (Comparison)</option>
+                        <option value="pie">Pie Chart (Distribution)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Export Settings -->
+            <div class="form-card">
+                <h3 class="form-title"> Export Settings</h3>
+                <div class="form-group">
+                    <label>Export Format</label>
+                    <select id="exportFormat">
+                        <option value="csv">CSV (Excel compatible)</option>
+                        <option value="json">JSON (API format)</option>
+                        <option value="pdf">PDF (Report format)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Include Headers</label>
+                    <label class="switch" style="margin-top: 10px;">
+                        <input type="checkbox" id="includeHeaders" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="form-card" style="border: 2px solid #ef4444;">
+            <h3 class="form-title" style="color: #ef4444;"> Danger Zone</h3>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-icon"></span>
+                    <div>
+                        <strong>Clear All Data</strong>
+                        <p>Remove all sales data (cannot be undone)</p>
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="clearAllData()">Clear Data</button>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-icon"></span>
+                    <div>
+                        <strong>Delete Account</strong>
+                        <p>Permanently delete your account and all data</p>
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="deleteAccount()">Delete Account</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        .setting-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .setting-icon {
+            font-size: 24px;
+        }
+        .setting-info p {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+        }
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .slider.round {
+            border-radius: 34px;
+        }
+        .slider.round:before {
+            border-radius: 50%;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+    </style>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '/';
+        }
+
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        document.getElementById('userName').innerHTML = `👤 ${user.username || 'User'}`;
+
+        // Load saved settings
+        function loadSettings() {
+            const darkMode = localStorage.getItem('theme') === 'dark';
+            document.getElementById('darkModeToggle').checked = darkMode;
+            
+            const compactView = localStorage.getItem('compactView') === 'true';
+            document.getElementById('compactView').checked = compactView;
+            
+            const emailReports = localStorage.getItem('emailReports') === 'true';
+            document.getElementById('emailReports').checked = emailReports;
+            
+            const stockAlerts = localStorage.getItem('stockAlerts') === 'true';
+            document.getElementById('stockAlerts').checked = stockAlerts;
+            
+            const defaultDateRange = localStorage.getItem('defaultDateRange') || '7';
+            document.getElementById('defaultDateRange').value = defaultDateRange;
+            
+            const defaultChartType = localStorage.getItem('defaultChartType') || 'line';
+            document.getElementById('defaultChartType').value = defaultChartType;
+            
+            const exportFormat = localStorage.getItem('exportFormat') || 'csv';
+            document.getElementById('exportFormat').value = exportFormat;
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const isDarkMode = body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function toggleCompactView() {
+            const isCompact = document.getElementById('compactView').checked;
+            localStorage.setItem('compactView', isCompact);
+            
+            if (isCompact) {
+                document.body.classList.add('compact-view');
+            } else {
+                document.body.classList.remove('compact-view');
+            }
+        }
+
+        // Save settings when changed
+        document.getElementById('emailReports').addEventListener('change', function() {
+            localStorage.setItem('emailReports', this.checked);
+        });
+        
+        document.getElementById('stockAlerts').addEventListener('change', function() {
+            localStorage.setItem('stockAlerts', this.checked);
+        });
+        
+        document.getElementById('defaultDateRange').addEventListener('change', function() {
+            localStorage.setItem('defaultDateRange', this.value);
+        });
+        
+        document.getElementById('defaultChartType').addEventListener('change', function() {
+            localStorage.setItem('defaultChartType', this.value);
+        });
+        
+        document.getElementById('exportFormat').addEventListener('change', function() {
+            localStorage.setItem('exportFormat', this.value);
+        });
+        
+        document.getElementById('includeHeaders').addEventListener('change', function() {
+            localStorage.setItem('includeHeaders', this.checked);
+        });
+
+        function clearAllData() {
+            if (confirm('⚠️ WARNING: This will delete ALL sales data. This action cannot be undone!\n\nAre you sure?')) {
+                if (confirm('Type "DELETE" to confirm:')) {
+                    // API call to clear data
+                    fetch(`${API_URL}/api/admin/clear-data`, { method: 'POST' })
+                        .then(() => alert('All data cleared successfully!'))
+                        .catch(() => alert('Error clearing data'));
+                }
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('⚠️ WARNING: This will permanently delete your account and all associated data!\n\nAre you sure?')) {
+                if (confirm('Type "DELETE ACCOUNT" to confirm:')) {
+                    // API call to delete account
+                    fetch(`${API_URL}/api/users/delete`, { 
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: user.username })
+                    })
+                    .then(() => {
+                        alert('Account deleted. You will be redirected.');
+                        sessionStorage.clear();
+                        window.location.href = '/';
+                    })
+                    .catch(() => alert('Error deleting account'));
+                }
+            }
+        }
+
+        function toggleDropdown() {
+            const userMenu = document.querySelector('.user-menu');
+            userMenu.classList.toggle('active');
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = '/';
+        }
+
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.user-menu');
+            if (userMenu && !userMenu.contains(event.target)) {
+                userMenu.classList.remove('active');
+            }
+        });
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+        
+        loadSettings();
+    </script>
+</body>
+</html>
